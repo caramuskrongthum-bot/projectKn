@@ -35,7 +35,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 35px;
+    margin-bottom: 25px;
     background: rgba(30, 41, 59, 0.6);
     backdrop-filter: blur(12px);
     padding: 20px 30px;
@@ -75,6 +75,89 @@ body {
     box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
 }
 
+/* =================================================== */
+/* Active User Banner (การ์ดคนสแกนล่าสุด) */
+/* =================================================== */
+.active-user-card {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.2));
+    border: 2px solid #38bdf8;
+    border-radius: 24px;
+    padding: 20px 30px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+    backdrop-filter: blur(10px);
+    transition: all 0.4s ease;
+}
+
+.active-user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.active-user-avatar {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    border: 3px solid #38bdf8;
+    object-fit: cover;
+    background: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: #38bdf8;
+}
+
+.active-user-details h4 {
+    color: #38bdf8;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+}
+
+.active-user-details h2 {
+    font-size: 1.6rem;
+    color: #ffffff;
+}
+
+.active-user-details p {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid #22c55e;
+    color: #4ade80;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-pulse {
+    width: 10px;
+    height: 10px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: pulse 1.6s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
 /* Layout แบ่ง 2 ฝั่ง (เนื้อหาหลัก + แถบ QR Code) */
 .main-layout {
     display: grid;
@@ -84,6 +167,8 @@ body {
 
 @media (max-width: 992px) {
     .main-layout { grid-template-columns: 1fr; }
+    .active-user-card { flex-direction: column; gap: 15px; text-align: center; }
+    .active-user-info { flex-direction: column; }
 }
 
 .stats {
@@ -208,6 +293,24 @@ tr:hover { background: rgba(51, 65, 85, 0.5); }
         </button>
     </div>
 
+    <!-- ส่วนแสดงผู้ใช้งานที่กำลังสแกนล่าสุด (Active User) -->
+    <div class="active-user-card" id="activeUserCard">
+        <div class="active-user-info">
+            <div id="avatarContainer">
+                <i class="fa-solid fa-user-check active-user-avatar"></i>
+            </div>
+            <div class="active-user-details">
+                <h4><i class="fa-solid fa-bolt"></i> ผู้ใช้งานที่สแกนล่าสุด</h4>
+                <h2 id="activeUserName">รอผู้สแกนใช้งาน...</h2>
+                <p id="activeUserEmail">สแกน QR Code เพื่อเริ่มต้นยืมร่ม</p>
+            </div>
+        </div>
+        <div class="status-badge" id="activeUserStatus" style="display: none;">
+            <div class="status-pulse"></div>
+            <span>พร้อมยืมร่ม</span>
+        </div>
+    </div>
+
     <div class="main-layout">
         <div>
             <div class="stats">
@@ -273,7 +376,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// **นำ URL หน้า GitHub Pages ที่โฮสต์ระบบลงทะเบียนมือถือมาวางที่นี่**
+// ลิงก์ไปยัง GitHub Pages
 const registerPageUrl = "https://caramuskrongthum-bot.github.io/projectKn/register.html";
 
 // สร้าง QR Code อัตโนมัติ
@@ -292,6 +395,12 @@ const topUser = document.getElementById("topUser");
 const refreshBtn = document.getElementById("refreshBtn");
 const refreshIcon = document.getElementById("refreshIcon");
 
+// Elements ของ Active User
+const activeUserName = document.getElementById("activeUserName");
+const activeUserEmail = document.getElementById("activeUserEmail");
+const activeUserStatus = document.getElementById("activeUserStatus");
+const avatarContainer = document.getElementById("avatarContainer");
+
 function updateDashboard(data) {
     if (!data) return;
 
@@ -300,7 +409,6 @@ function updateDashboard(data) {
 
     for (const key in data) {
         const user = data[key];
-        // ดึงชื่อแสดงผล (ถ้าไม่มี displayName ให้ดึงชื่อหน้า @ จาก Email)
         let nameDisplay = user.displayName;
         if (!nameDisplay && user.email) {
             nameDisplay = user.email.split('@')[0];
@@ -311,7 +419,8 @@ function updateDashboard(data) {
             email: user.email || "ไม่ระบุอีเมล",
             name: nameDisplay || "User",
             token: user.token || 0,
-            reputation: user.reputation || 0
+            reputation: user.reputation || 0,
+            photoURL: user.photoURL || null
         });
 
         total += user.token || 0;
@@ -346,6 +455,37 @@ function updateDashboard(data) {
         `;
     });
 }
+
+// ----------------------------------------------------
+// ระบบดึงข้อมูลผู้สแกนคนล่าสุด (Active User Realtime)
+// ----------------------------------------------------
+onValue(ref(db, "active_user"), async (snapshot) => {
+    const activeUid = snapshot.val();
+
+    if (activeUid) {
+        // ดึงข้อมูลรายชื่อจาก Node /users/activeUid
+        const userSnapshot = await get(ref(db, `users/${activeUid}`));
+        const userData = userSnapshot.val();
+
+        if (userData) {
+            const name = userData.displayName || userData.email.split('@')[0];
+            activeUserName.textContent = name;
+            activeUserEmail.textContent = userData.email;
+            activeUserStatus.style.display = "flex";
+
+            if (userData.photoURL) {
+                avatarContainer.innerHTML = `<img src="${userData.photoURL}" class="active-user-avatar" alt="User Avatar">`;
+            } else {
+                avatarContainer.innerHTML = `<i class="fa-solid fa-user-check active-user-avatar"></i>`;
+            }
+        }
+    } else {
+        activeUserName.textContent = "รอผู้สแกนใช้งาน...";
+        activeUserEmail.textContent = "สแกน QR Code ด้วยมือถือเพื่อเริ่มต้นยืมร่ม";
+        activeUserStatus.style.display = "none";
+        avatarContainer.innerHTML = `<i class="fa-solid fa-user-clock active-user-avatar" style="color: #64748b; border-color: #475569;"></i>`;
+    }
+});
 
 // 1. ดึงข้อมูลแบบ Realtime Auto-Update
 onValue(ref(db, "users"), snapshot => {
