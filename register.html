@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ลงทะเบียนยืมร่ม - Bangkok Center</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+body {
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+.card {
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.icon { font-size: 3rem; color: #38bdf8; margin-bottom: 15px; }
+h2 { margin-bottom: 8px; }
+p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px; }
+.btn-google {
+    background: white;
+    color: #333;
+    border: none;
+    padding: 14px;
+    width: 100%;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.2s;
+}
+.btn-google:hover { background: #f1f5f9; }
+.user-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+    <i class="fa-solid fa-umbrella icon"></i>
+    <h2>Bangkok Center</h2>
+    <p>เข้าสู่ระบบเพื่อยืนยันตัวตนในการยืมร่ม</p>
+
+    <div id="authSection">
+        <button class="btn-google" id="loginBtn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+            เข้าสู่ระบบด้วย Google
+        </button>
+    </div>
+
+    <div id="userSection" style="display: none;" class="user-info">
+        <h3 id="userName" style="color:#38bdf8;"></h3>
+        <p id="userEmail" style="margin-bottom: 10px;"></p>
+        <p>สถิติของคุณ: <b id="userTokens" style="color:#22c55e;">0</b> ครั้ง</p>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCA4Vghk2WEmiDvHwLNCppKenAqxIs5Oe8",
+    authDomain: "bangkokcenter.firebaseapp.com",
+    databaseURL: "https://bangkokcenter-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "bangkokcenter",
+    appId: "1:711317947999:web:0d0f32add1d10406fb7dea"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const provider = new GoogleAuthProvider();
+
+document.getElementById("loginBtn").addEventListener("click", () => {
+    signInWithPopup(auth, provider).then(async (result) => {
+        const user = result.user;
+        const userRef = ref(db, `users/${user.uid}`);
+        
+        // เช็กว่ามีข้อมูลใน Firebase เดิมหรือยัง
+        const snapshot = await get(userRef);
+        let tokenCount = 0;
+
+        if (!snapshot.exists()) {
+            // สร้าง record ใหม่เมื่อล็อกอินครั้งแรก
+            await set(userRef, {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                token: 0,
+                reputation: 100,
+                umbrella: true
+            });
+        } else {
+            tokenCount = snapshot.val().token || 0;
+        }
+
+        // แสดงผลหน้าจอหลังล็อกอินสำเร็จ
+        document.getElementById("authSection").style.display = "none";
+        document.getElementById("userSection").style.display = "block";
+        document.getElementById("userName").textContent = user.displayName;
+        document.getElementById("userEmail").textContent = user.email;
+        document.getElementById("userTokens").textContent = tokenCount;
+
+    }).catch((error) => {
+        alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ: " + error.message);
+    });
+});
+</script>
+</body>
+</html>
