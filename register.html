@@ -74,12 +74,18 @@ p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px; }
         <p>สถิติของคุณ: <b id="userTokens" style="color:#22c55e;">0</b> ครั้ง</p>
         <p style="color:#22c55e; font-size:0.85rem; margin-top:8px;"><i class="fa-solid fa-circle-check"></i> ระบบบันทึกสถานะ "กำลังใช้งาน" แล้ว สามารถหยิบร่มได้เลย</p>
     </div>
+
+    <div id="returnedSection" style="display: none;" class="user-info">
+        <i class="fa-solid fa-circle-check" style="color:#22c55e; font-size:1.8rem; margin-bottom:8px;"></i>
+        <h3 style="color:#22c55e;">คืนร่มเรียบร้อยแล้ว ขอบคุณครับ/ค่ะ</h3>
+        <p style="margin-top:8px;">ระบบกำลังออกจากระบบเพื่อรอคนต่อไปสแกน...</p>
+    </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+import { getAuth, signInWithPopup, signOut, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCA4Vghk2WEmiDvHwLNCppKenAqxIs5Oe8",
@@ -94,12 +100,51 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 const provider = new GoogleAuthProvider();
 
+const authSection = document.getElementById("authSection");
+const userSection = document.getElementById("userSection");
+const returnedSection = document.getElementById("returnedSection");
+
+// เก็บ UID ของคนที่กำลังล็อกอินอยู่บนหน้านี้ ณ ตอนนี้
+let currentUid = null;
+
+function showLoginScreen() {
+    authSection.style.display = "block";
+    userSection.style.display = "none";
+    returnedSection.style.display = "none";
+}
+
+function showReturnedScreen() {
+    authSection.style.display = "none";
+    userSection.style.display = "none";
+    returnedSection.style.display = "block";
+}
+
+// เฝ้าดู active_user แบบเรียลไทม์: ถ้าค่าเปลี่ยนไปจาก UID ของเราเอง
+// (เช่น discord_bridge.py ลบทิ้งเพราะร่มถูกคืนแล้ว) ให้ออกจากระบบอัตโนมัติ
+// เพื่อเคลียร์หน้าจอรอคนต่อไปสแกน
+onValue(ref(db, "active_user"), async (snapshot) => {
+    if (!currentUid) return; // ยังไม่มีใครล็อกอินบนเครื่องนี้ ไม่ต้องทำอะไร
+
+    const activeUid = snapshot.val();
+    if (activeUid !== currentUid) {
+        showReturnedScreen();
+        try {
+            await signOut(auth);
+        } catch (e) {
+            console.error("Sign out error", e);
+        }
+        currentUid = null;
+        setTimeout(showLoginScreen, 2500);
+    }
+});
+
 document.getElementById("loginBtn").addEventListener("click", () => {
     signInWithPopup(auth, provider).then(async (result) => {
         const user = result.user;
         const userRef = ref(db, `users/${user.uid}`);
 
         // บันทึกว่า UID นี้คือผู้ใช้ที่ล็อกอิน/สแกนล่าสุด (ให้ discord_bridge.py และหน้า index.html อ่านค่านี้)
+        currentUid = user.uid;
         await set(ref(db, "active_user"), user.uid);
 
         // เช็กว่ามีข้อมูลใน Firebase เดิมหรือยัง
@@ -121,8 +166,9 @@ document.getElementById("loginBtn").addEventListener("click", () => {
         }
 
         // แสดงผลหน้าจอหลังล็อกอินสำเร็จ
-        document.getElementById("authSection").style.display = "none";
-        document.getElementById("userSection").style.display = "block";
+        authSection.style.display = "none";
+        userSection.style.display = "block";
+        returnedSection.style.display = "none";
         document.getElementById("userName").textContent = user.displayName;
         document.getElementById("userEmail").textContent = user.email;
         document.getElementById("userTokens").textContent = tokenCount;
