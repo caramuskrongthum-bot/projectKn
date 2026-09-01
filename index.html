@@ -7,13 +7,16 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <!-- คลังสร้าง QR Code -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Thai:wght@100..800&display=swap" rel="stylesheet">
 
 <style>
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+    font-family: "Playpen Sans Thai", cursive, 'Segoe UI', sans-serif;
 }
 
 body {
@@ -24,11 +27,65 @@ body {
     min-height: 100vh;
     color: #f8fafc;
     padding: 40px 20px;
+    overflow-x: hidden;
+}
+
+/* Canvas สำหรับเอฟเฟกต์ Mouse Trail */
+#trail-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* --- อนิเมชันการปรากฏขององค์ประกอบ (Fade Up) --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header, .card, .topUser, .table-box, .qr-card {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* --- อนิเมชัน White Stroke & Glowing Effect รอบกรอบ --- */
+@keyframes strokeGlow {
+    0% {
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+    50% {
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.25), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    100% {
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+}
+
+.header, .card, .table-box, .qr-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    animation: strokeGlow 4s infinite ease-in-out, fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .header {
@@ -36,11 +93,8 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 35px;
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(12px);
     padding: 20px 30px;
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .header h1 {
@@ -66,16 +120,19 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
 }
 
 .btn-refresh:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(2, 132, 199, 0.6);
 }
 
-/* Layout แบ่ง 2 ฝั่ง (เนื้อหาหลัก + แถบ QR Code) */
+.btn-refresh:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
 .main-layout {
     display: grid;
     grid-template-columns: 1fr 300px;
@@ -94,18 +151,22 @@ body {
 }
 
 .card {
-    background: rgba(30, 41, 59, 0.7);
     border-radius: 20px;
     padding: 24px;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
 }
 
 .card h2 {
     font-size: 2.5rem;
     color: #38bdf8;
     margin-bottom: 5px;
+    transition: color 0.3s ease;
 }
 
 .card p {
@@ -114,19 +175,29 @@ body {
 }
 
 .topUser {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.05));
-    border: 1px solid rgba(245, 158, 11, 0.4);
     border-radius: 20px;
     padding: 25px;
     margin-bottom: 25px;
     text-align: center;
     position: relative;
+    transition: all 0.3s ease;
+}
+
+.topUser:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
 }
 
 .topUser .crown {
     font-size: 2.5rem;
     color: #fbbf24;
     margin-bottom: 10px;
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.topUser:hover .crown {
+    transform: scale(1.2) rotate(10deg);
 }
 
 .topUser h2 { color: #fef08a; font-size: 1.2rem; }
@@ -134,10 +205,8 @@ body {
 .topUser p { color: #fde047; font-weight: 600; }
 
 .table-box {
-    background: rgba(30, 41, 59, 0.7);
     border-radius: 20px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 table {
@@ -159,18 +228,27 @@ td {
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: #e2e8f0;
+    transition: background 0.2s ease, transform 0.2s ease;
 }
 
-tr:hover { background: rgba(51, 65, 85, 0.5); }
+tr {
+    transition: background-color 0.3s ease;
+}
 
-/* QR Code Sidebar Card */
+tr:hover td {
+    background: rgba(56, 189, 248, 0.12);
+}
+
 .qr-card {
-    background: rgba(30, 41, 59, 0.7);
     border-radius: 20px;
     padding: 25px;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
     height: fit-content;
+}
+
+.qr-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
 }
 
 .qr-card h3 {
@@ -189,13 +267,37 @@ tr:hover { background: rgba(51, 65, 85, 0.5); }
     padding: 15px;
     border-radius: 16px;
     display: inline-block;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.online { color: #22c55e; }
-.footer { text-align: center; margin-top: 30px; color: #64748b; font-size: 0.85rem; }
+#qrcode:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+}
+
+.online { 
+    color: #22c55e; 
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.footer { 
+    text-align: center; 
+    margin-top: 30px; 
+    color: #64748b; 
+    font-size: 0.85rem; 
+}
 </style>
 </head>
 <body>
+
+<!-- Canvas รองรับ Mouse Trail Animation -->
+<canvas id="trail-canvas"></canvas>
 
 <div class="container">
     <div class="header">
@@ -220,19 +322,19 @@ tr:hover { background: rgba(51, 65, 85, 0.5); }
                     <p>จำนวนการยืมรวม (ครั้ง)</p>
                 </div>
                 <div class="card">
-                    <h2 class="online"><i class="fa-solid fa-circle"></i></h2>
+                    <h2><i class="fa-solid fa-circle online"></i></h2>
                     <p>Firebase Realtime</p>
                 </div>
             </div>
 
-            <div class="topUser" id="activeUser" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.05)); border-color: rgba(56, 189, 248, 0.4);">
+            <div class="topUser" id="activeUser" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.05)); border: 1.5px solid rgba(56, 189, 248, 0.4);">
                 <i class="fa-solid fa-qrcode crown" style="color:#38bdf8;"></i>
                 <h2 style="color:#7dd3fc;">ผู้ใช้งานล่าสุดที่สแกน/ล็อกอิน</h2>
                 <h3 id="activeUserName">ยังไม่มีผู้ใช้งานสแกนเข้าสู่ระบบ</h3>
                 <p id="activeUserEmail" style="color:#7dd3fc;"></p>
             </div>
 
-            <div class="topUser" id="topUser">
+            <div class="topUser" id="topUser" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.05)); border: 1.5px solid rgba(245, 158, 11, 0.4);">
                 <i class="fa-solid fa-crown crown"></i>
                 <h2>กำลังโหลดข้อมูลอันดับ 1...</h2>
             </div>
@@ -280,10 +382,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// **นำ URL หน้า GitHub Pages ที่โฮสต์ระบบลงทะเบียนมือถือมาวางที่นี่**
 const registerPageUrl = "https://caramuskrongthum-bot.github.io/projectKn/register.html";
 
-// สร้าง QR Code อัตโนมัติ
 new QRCode(document.getElementById("qrcode"), {
     text: registerPageUrl,
     width: 180,
@@ -301,7 +401,6 @@ const activeUserEmail = document.getElementById("activeUserEmail");
 const refreshBtn = document.getElementById("refreshBtn");
 const refreshIcon = document.getElementById("refreshIcon");
 
-// เก็บรายชื่อผู้ใช้ล่าสุดไว้ใช้ค้นหาตอนแสดงผล active_user
 let latestUsers = [];
 
 function renderActiveUser(activeUid) {
@@ -329,7 +428,6 @@ function updateDashboard(data) {
 
     for (const key in data) {
         const user = data[key];
-        // ดึงชื่อแสดงผล (ถ้าไม่มี displayName ให้ดึงชื่อหน้า @ จาก Email)
         let nameDisplay = user.displayName;
         if (!nameDisplay && user.email) {
             nameDisplay = user.email.split('@')[0];
@@ -377,25 +475,87 @@ function updateDashboard(data) {
     });
 }
 
-// 1. ดึงข้อมูลแบบ Realtime Auto-Update
 onValue(ref(db, "users"), snapshot => {
     updateDashboard(snapshot.val());
-    // อัปเดตการ์ด active user ใหม่ทุกครั้งที่ users เปลี่ยน (เผื่อชื่อ/อีเมลเปลี่ยน)
     get(ref(db, "active_user")).then(s => renderActiveUser(s.val()));
 });
 
-// 1b. ฟังการเปลี่ยนแปลงของผู้ใช้ที่กำลังสแกน/ล็อกอินล่าสุดแบบ Realtime
 onValue(ref(db, "active_user"), snapshot => {
     renderActiveUser(snapshot.val());
 });
 
-// 2. ฟังก์ชันปุ่ม Manual Refresh
 refreshBtn.addEventListener("click", async () => {
     refreshIcon.classList.add("fa-spin");
     const snapshot = await get(ref(db, "users"));
     updateDashboard(snapshot.val());
     setTimeout(() => refreshIcon.classList.remove("fa-spin"), 600);
 });
+</script>
+
+<!-- Script สำหรับสร้าง Cursor Trail Effect (ละอองดาวเรืองแสงตามเมาส์) -->
+<script>
+const canvas = document.getElementById("trail-canvas");
+const ctx = canvas.getContext("2d");
+
+let particles = [];
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 4 + 1;
+        this.speedX = (Math.random() - 0.5) * 1.5;
+        this.speedY = (Math.random() - 0.5) * 1.5;
+        this.color = `hsl(${Math.random() * 60 + 190}, 100%, 70%)`; // โทนสีฟ้า-ฟ้าอ่อน
+        this.alpha = 1;
+        this.decay = Math.random() * 0.02 + 0.015;
+    }
+
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= this.decay;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+window.addEventListener("mousemove", (e) => {
+    for (let i = 0; i < 3; i++) {
+        particles.push(new Particle(e.clientX, e.clientY));
+    }
+});
+
+function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].alpha <= 0) {
+            particles.splice(i, 1);
+            i--;
+        }
+    }
+    requestAnimationFrame(animateParticles);
+}
+animateParticles();
 </script>
 </body>
 </html>
