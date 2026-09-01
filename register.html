@@ -5,56 +5,172 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ลงทะเบียนยืมร่ม - Bangkok Center</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Thai:wght@100..800&display=swap" rel="stylesheet">
+
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Playpen Sans Thai", cursive, 'Segoe UI', sans-serif;
+}
+
 body {
-    background: #0f172a;
+    background: #090d16;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.12) 0px, transparent 50%);
     color: white;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     padding: 20px;
+    overflow-x: hidden;
 }
+
+/* Canvas สำหรับเอฟเฟกต์ Mouse Trail */
+#trail-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* --- อนิเมชัน Fade-in เข้าสู่หน้าจอ --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- อนิเมชัน White Stroke & Glow รอบกรอบ --- */
+@keyframes strokeGlow {
+    0% {
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+    50% {
+        border-color: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.25), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    100% {
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+}
+
 .card {
-    background: #1e293b;
-    padding: 30px;
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    padding: 35px 30px;
     border-radius: 24px;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    animation: strokeGlow 4s infinite ease-in-out, fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    z-index: 1;
 }
-.icon { font-size: 3rem; color: #38bdf8; margin-bottom: 15px; }
-h2 { margin-bottom: 8px; }
-p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px; }
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(56, 189, 248, 0.2);
+}
+
+.icon { 
+    font-size: 3.2rem; 
+    color: #38bdf8; 
+    margin-bottom: 15px; 
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.card:hover .icon {
+    transform: scale(1.1) rotate(-5deg);
+}
+
+h2 { 
+    margin-bottom: 8px; 
+    font-size: 1.8rem;
+    background: linear-gradient(to right, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+p { 
+    color: #94a3b8; 
+    font-size: 0.95rem; 
+    margin-bottom: 25px; 
+}
+
 .btn-google {
     background: white;
-    color: #333;
+    color: #0f172a;
     border: none;
     padding: 14px;
     width: 100%;
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    transition: 0.2s;
+    gap: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
 }
-.btn-google:hover { background: #f1f5f9; }
+
+.btn-google:hover { 
+    background: #f8fafc;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.25);
+}
+
+.btn-google:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
 .user-info {
     margin-top: 20px;
-    padding: 15px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.status-icon {
+    font-size: 2.2rem;
+    color: #22c55e;
+    margin-bottom: 10px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
 }
 </style>
 </head>
 <body>
+
+<!-- Canvas รองรับ Mouse Trail Animation -->
+<canvas id="trail-canvas"></canvas>
 
 <div class="card">
     <i class="fa-solid fa-umbrella icon"></i>
@@ -69,16 +185,16 @@ p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px; }
     </div>
 
     <div id="userSection" style="display: none;" class="user-info">
-        <h3 id="userName" style="color:#38bdf8;"></h3>
-        <p id="userEmail" style="margin-bottom: 10px;"></p>
-        <p>สถิติของคุณ: <b id="userTokens" style="color:#22c55e;">0</b> ครั้ง</p>
-        <p style="color:#22c55e; font-size:0.85rem; margin-top:8px;"><i class="fa-solid fa-circle-check"></i> ระบบบันทึกสถานะ "กำลังใช้งาน" แล้ว สามารถหยิบร่มได้เลย</p>
+        <h3 id="userName" style="color:#38bdf8; font-size: 1.3rem;"></h3>
+        <p id="userEmail" style="margin-bottom: 12px; color:#94a3b8;"></p>
+        <p style="color:#e2e8f0;">สถิติของคุณ: <b id="userTokens" style="color:#22c55e; font-size: 1.1rem;">0</b> ครั้ง</p>
+        <p style="color:#22c55e; font-size:0.85rem; margin-top:12px; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 8px;"><i class="fa-solid fa-circle-check"></i> ระบบบันทึกสถานะ "กำลังใช้งาน" แล้ว สามารถหยิบร่มได้เลย</p>
     </div>
 
     <div id="returnedSection" style="display: none;" class="user-info">
-        <i class="fa-solid fa-circle-check" style="color:#22c55e; font-size:1.8rem; margin-bottom:8px;"></i>
-        <h3 style="color:#22c55e;">คืนร่มเรียบร้อยแล้ว ขอบคุณครับ/ค่ะ</h3>
-        <p style="margin-top:8px;">ระบบกำลังออกจากระบบเพื่อรอคนต่อไปสแกน...</p>
+        <i class="fa-solid fa-circle-check status-icon"></i>
+        <h3 style="color:#22c55e; font-size: 1.2rem;">คืนร่มเรียบร้อยแล้ว ขอบคุณครับ/ค่ะ</h3>
+        <p style="margin-top:8px; font-size: 0.85rem;">ระบบกำลังออกจากระบบเพื่อรอคนต่อไปสแกน...</p>
     </div>
 </div>
 
@@ -104,7 +220,6 @@ const authSection = document.getElementById("authSection");
 const userSection = document.getElementById("userSection");
 const returnedSection = document.getElementById("returnedSection");
 
-// เก็บ UID ของคนที่กำลังล็อกอินอยู่บนหน้านี้ ณ ตอนนี้
 let currentUid = null;
 
 function showLoginScreen() {
@@ -119,11 +234,8 @@ function showReturnedScreen() {
     returnedSection.style.display = "block";
 }
 
-// เฝ้าดู active_user แบบเรียลไทม์: ถ้าค่าเปลี่ยนไปจาก UID ของเราเอง
-// (เช่น discord_bridge.py ลบทิ้งเพราะร่มถูกคืนแล้ว) ให้ออกจากระบบอัตโนมัติ
-// เพื่อเคลียร์หน้าจอรอคนต่อไปสแกน
 onValue(ref(db, "active_user"), async (snapshot) => {
-    if (!currentUid) return; // ยังไม่มีใครล็อกอินบนเครื่องนี้ ไม่ต้องทำอะไร
+    if (!currentUid) return;
 
     const activeUid = snapshot.val();
     if (activeUid !== currentUid) {
@@ -143,16 +255,13 @@ document.getElementById("loginBtn").addEventListener("click", () => {
         const user = result.user;
         const userRef = ref(db, `users/${user.uid}`);
 
-        // บันทึกว่า UID นี้คือผู้ใช้ที่ล็อกอิน/สแกนล่าสุด (ให้ discord_bridge.py และหน้า index.html อ่านค่านี้)
         currentUid = user.uid;
         await set(ref(db, "active_user"), user.uid);
 
-        // เช็กว่ามีข้อมูลใน Firebase เดิมหรือยัง
         const snapshot = await get(userRef);
         let tokenCount = 0;
 
         if (!snapshot.exists()) {
-            // สร้าง record ใหม่เมื่อล็อกอินครั้งแรก
             await set(userRef, {
                 uid: user.uid,
                 email: user.email,
@@ -165,7 +274,6 @@ document.getElementById("loginBtn").addEventListener("click", () => {
             tokenCount = snapshot.val().token || 0;
         }
 
-        // แสดงผลหน้าจอหลังล็อกอินสำเร็จ
         authSection.style.display = "none";
         userSection.style.display = "block";
         returnedSection.style.display = "none";
@@ -177,6 +285,72 @@ document.getElementById("loginBtn").addEventListener("click", () => {
         alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ: " + error.message);
     });
 });
+</script>
+
+<!-- Script สำหรับสร้าง Cursor Trail Effect (ละอองดาวเรืองแสงตามเมาส์) -->
+<script>
+const canvas = document.getElementById("trail-canvas");
+const ctx = canvas.getContext("2d");
+
+let particles = [];
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 4 + 1;
+        this.speedX = (Math.random() - 0.5) * 1.5;
+        this.speedY = (Math.random() - 0.5) * 1.5;
+        this.color = `hsl(${Math.random() * 60 + 190}, 100%, 70%)`;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.02 + 0.015;
+    }
+
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= this.decay;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+window.addEventListener("mousemove", (e) => {
+    for (let i = 0; i < 3; i++) {
+        particles.push(new Particle(e.clientX, e.clientY));
+    }
+});
+
+function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].alpha <= 0) {
+            particles.splice(i, 1);
+            i--;
+        }
+    }
+    requestAnimationFrame(animateParticles);
+}
+animateParticles();
 </script>
 </body>
 </html>
